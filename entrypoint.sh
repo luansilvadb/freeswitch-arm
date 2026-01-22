@@ -26,7 +26,7 @@ if [ "$(id -u)" = "0" ]; then
     # If argument is freeswitch, run it as the freeswitch user
     if [ "$1" = "freeswitch" ]; then
         shift
-        exec gosu freeswitch /usr/local/freeswitch/bin/freeswitch -ncwait -nonat "$@"
+        exec gosu freeswitch /usr/local/freeswitch/bin/freeswitch -c -nonat "$@"
     fi
 fi
 
