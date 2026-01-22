@@ -18,16 +18,40 @@ if [ ! -f /usr/local/freeswitch/conf/freeswitch.xml ]; then
     # We could add logic here to restore defaults if empty.
 fi
 
-# Fix permissions if running as root but switching to user
-# (This script runs as root by default from Docker)
-if [ "$(id -u)" = "0" ]; then
-    chown -R freeswitch:freeswitch /usr/local/freeswitch
+# Determine if we're starting FreeSWITCH
+start_freeswitch() {
+    local FS_ARGS="-nf -nonat"
     
-    # If argument is freeswitch, run it as the freeswitch user
-    if [ "$1" = "freeswitch" ]; then
-        shift
-        exec gosu freeswitch /usr/local/freeswitch/bin/freeswitch -nf -nonat "$@"
+    # Add any additional arguments passed
+    if [ $# -gt 0 ]; then
+        FS_ARGS="$FS_ARGS $@"
     fi
-fi
+    
+    echo "Starting FreeSWITCH with: $FS_ARGS"
+    
+    if [ "$(id -u)" = "0" ]; then
+        # Running as root - switch to freeswitch user
+        chown -R freeswitch:freeswitch /usr/local/freeswitch
+        exec gosu freeswitch /usr/local/freeswitch/bin/freeswitch $FS_ARGS
+    else
+        # Already running as non-root
+        exec /usr/local/freeswitch/bin/freeswitch $FS_ARGS
+    fi
+}
 
-exec "$@"
+# Handle command
+case "$1" in
+    freeswitch|"")
+        # Default command or explicit freeswitch
+        shift 2>/dev/null || true
+        start_freeswitch "$@"
+        ;;
+    -*)
+        # Flags passed directly (e.g., -nf -c)
+        start_freeswitch "$@"
+        ;;
+    *)
+        # Any other command - run it directly
+        exec "$@"
+        ;;
+esac
