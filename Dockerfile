@@ -148,12 +148,12 @@ COPY --from=build /usr/lib/*sofia* /usr/lib/
 
 
 # Also check /usr/local/lib for signalwire/ks if cmake installed there
-COPY --from=build /usr/local/lib/*signalwire* /usr/local/lib/ || true
-COPY --from=build /usr/local/lib/*libks* /usr/local/lib/ || true
-COPY --from=build /usr/include/*signalwire* /usr/include/ || true
-COPY --from=build /usr/include/*libks* /usr/include/ || true
-COPY --from=build /usr/include/*spandsp* /usr/include/ || true
-COPY --from=build /usr/include/*sofia-sip* /usr/include/ || true
+COPY --from=build /usr/local/lib/*signalwire* /usr/local/lib/
+COPY --from=build /usr/local/lib/*libks* /usr/local/lib/
+COPY --from=build /usr/include/*signalwire* /usr/include/
+COPY --from=build /usr/include/*libks* /usr/include/
+COPY --from=build /usr/include/*spandsp* /usr/include/
+COPY --from=build /usr/include/*sofia-sip* /usr/include/
 
 
 
