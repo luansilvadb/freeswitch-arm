@@ -62,7 +62,16 @@ RUN git clone https://github.com/freeswitch/spandsp.git \
     && make install
     
 
+
+# Build libyuv
+RUN git clone https://github.com/freeswitch/libyuv.git \
+    && cd libyuv \
+    && cmake . -DCMAKE_INSTALL_PREFIX=/usr \
+    && make -j$(nproc) \
+    && make install
+    
 # Build sofia-sip
+
 RUN git clone https://github.com/freeswitch/sofia-sip.git \
     && cd sofia-sip \
     && ./bootstrap.sh \
@@ -120,6 +129,8 @@ COPY --from=build /usr/lib/*signalwire* /usr/lib/
 COPY --from=build /usr/lib/*libks* /usr/lib/
 COPY --from=build /usr/lib/*spandsp* /usr/lib/
 COPY --from=build /usr/lib/*sofia* /usr/lib/
+COPY --from=build /usr/lib/*yuv* /usr/lib/
+
 
 
 # Also check /usr/local/lib for signalwire/ks if cmake installed there
