@@ -126,6 +126,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     libtiff6 \
     libyuv0 \
+    libavformat59 \
+    libavcodec59 \
+    libswscale6 \
+    libavutil57 \
+    libopencore-amrnb0 \
+    libopencore-amrwb0 \
+    libshout3 \
+    libpng16-16 \
+    libldap-2.5-0 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
