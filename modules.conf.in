@@ -26,7 +26,7 @@ codecs/mod_g729
 codecs/mod_h26x
 codecs/mod_opus
 codecs/mod_vpx
-codecs/mod_silk
+# codecs/mod_silk
 codecs/mod_spandsp
 
 # Dialplans
