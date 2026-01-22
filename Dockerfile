@@ -190,13 +190,10 @@ EXPOSE 16384-32768/udp
 # Volumes
 VOLUME ["/usr/local/freeswitch/conf", "/usr/local/freeswitch/log", "/usr/local/freeswitch/run", "/usr/local/freeswitch/db"]
 
-# Healthcheck - TEMPORARILY DISABLED for debugging
-# TODO: Re-enable after confirming FreeSWITCH stays running
-# Original healthcheck to restore:
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
-#     CMD pgrep -x freeswitch > /dev/null && \
-#         (ss -tuln | grep -q ":5060 " || netstat -tuln | grep -q ":5060 ") || exit 1
-HEALTHCHECK NONE
+# Healthcheck - verify FreeSWITCH process is running and SIP port is listening
+# Using process + port check is more reliable for Swarm/Easypanel environments than fs_cli
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD pgrep -x freeswitch > /dev/null && ss -tuln | grep -q ":5060 " || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["freeswitch"]
