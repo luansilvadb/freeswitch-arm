@@ -43,27 +43,27 @@ RUN git clone https://github.com/signalwire/libks.git \
     && cd libks \
     && cmake . -DCMAKE_INSTALL_PREFIX=/usr -DWITH_LIBBACKTRACE=OFF \
     && make -j$(nproc) \
+    && make install
 
 # Build signalwire-c
 RUN git clone https://github.com/signalwire/signalwire-c.git \
     && cd signalwire-c \
     && cmake . -DCMAKE_INSTALL_PREFIX=/usr \
     && make -j$(nproc) \
+    && make install
 
 # Build FreeSWITCH
-# Using a specific tag/commit can be safer, but master is requested for "wrapper of freeswitch-arm repo" 
-# (assuming latest source). You might want to pin a version if stability is key.
 RUN git clone https://github.com/signalwire/freeswitch.git \
     && cd freeswitch \
     && ./bootstrap.sh -j
 
+COPY modules.conf.in /usr/src/freeswitch/modules.conf
 
 # Configure and Build
-# Disable zrtp to avoid dependency complexity if not needed, or ensure libzrtp is present.
-# We stick to standard build.
 RUN cd freeswitch \
     && ./configure --prefix=/usr/local/freeswitch \
     && make -j$(nproc) \
+    && make install
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
