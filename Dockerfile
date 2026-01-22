@@ -52,6 +52,15 @@ RUN git clone https://github.com/signalwire/signalwire-c.git \
     && make -j$(nproc) \
     && make install
 
+
+# Build spandsp
+RUN git clone https://github.com/freeswitch/spandsp.git \
+    && cd spandsp \
+    && ./bootstrap.sh \
+    && ./configure --prefix=/usr \
+    && make -j$(nproc) \
+    && make install
+    
 # Build FreeSWITCH
 RUN git clone https://github.com/signalwire/freeswitch.git \
     && cd freeswitch \
@@ -100,11 +109,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=build /usr/local/freeswitch /usr/local/freeswitch
 COPY --from=build /usr/lib/*signalwire* /usr/lib/
 COPY --from=build /usr/lib/*libks* /usr/lib/
+COPY --from=build /usr/lib/*spandsp* /usr/lib/
+
 # Also check /usr/local/lib for signalwire/ks if cmake installed there
 COPY --from=build /usr/local/lib/*signalwire* /usr/local/lib/ || true
 COPY --from=build /usr/local/lib/*libks* /usr/local/lib/ || true
 COPY --from=build /usr/include/*signalwire* /usr/include/ || true
 COPY --from=build /usr/include/*libks* /usr/include/ || true
+COPY --from=build /usr/include/*spandsp* /usr/include/ || true
+
 
 # Refresh ld cache
 RUN ldconfig
