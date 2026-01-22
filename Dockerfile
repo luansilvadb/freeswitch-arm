@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libpq-dev \
     libtiff-dev \
+    libyuv-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -63,13 +64,6 @@ RUN git clone https://github.com/freeswitch/spandsp.git \
     
 
 
-# Build libyuv
-RUN git clone https://github.com/freeswitch/libyuv.git \
-    && cd libyuv \
-    && cmake . -DCMAKE_INSTALL_PREFIX=/usr \
-    && make -j$(nproc) \
-    && make install
-    
 # Build sofia-sip
 
 RUN git clone https://github.com/freeswitch/sofia-sip.git \
@@ -120,6 +114,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g \
     libpq5 \
     libtiff6 \
+    libyuv0 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -129,7 +124,6 @@ COPY --from=build /usr/lib/*signalwire* /usr/lib/
 COPY --from=build /usr/lib/*libks* /usr/lib/
 COPY --from=build /usr/lib/*spandsp* /usr/lib/
 COPY --from=build /usr/lib/*sofia* /usr/lib/
-COPY --from=build /usr/lib/*yuv* /usr/lib/
 
 
 
