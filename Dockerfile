@@ -34,6 +34,17 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libtiff-dev \
     libyuv-dev \
+    libpng-dev \
+    libshout3-dev \
+    libmpg123-dev \
+    libmp3lame-dev \
+    libldap-dev \
+    libopencore-amrnb-dev \
+    libopencore-amrwb-dev \
+    libavformat-dev \
+    libavcodec-dev \
+    libswscale-dev \
+    libavutil-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
