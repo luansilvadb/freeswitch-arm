@@ -162,6 +162,10 @@ COPY --from=build /usr/include/*sofia-sip* /usr/include/
 # Refresh ld cache
 RUN ldconfig
 
+# Copy custom configuration from repository
+# This overwrites the default configuration installed by the build process
+COPY docs/conf /usr/local/freeswitch/conf
+
 # Create user/group (optional, but good practice. Spec didn't strictly mandate rootless, but implicit in US2 config)
 RUN groupadd -r freeswitch && useradd -r -g freeswitch freeswitch
 

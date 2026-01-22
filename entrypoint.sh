@@ -18,6 +18,22 @@ if [ ! -f /usr/local/freeswitch/conf/freeswitch.xml ]; then
     # We could add logic here to restore defaults if empty.
 fi
 
+# Configure xml_curl gateway if ENV set
+configure_xml_curl() {
+    if [ -n "$XML_CURL_URL" ]; then
+        local CONF_FILE="/usr/local/freeswitch/conf/autoload_configs/xml_curl.conf.xml"
+        # Only log if we are actually changing it to avoid noise
+        echo "Configuring xml_curl gateway-url to: $XML_CURL_URL"
+        
+        if [ -f "$CONF_FILE" ]; then
+            # Use | as delimiter to avoid issues with / in URL
+            sed -i "s|name=\"gateway-url\" value=\"[^\"]*\"|name=\"gateway-url\" value=\"$XML_CURL_URL\"|" "$CONF_FILE"
+        else
+            echo "WARNING: $CONF_FILE not found, skipping xml_curl configuration"
+        fi
+    fi
+}
+
 # Determine if we're starting FreeSWITCH
 start_freeswitch() {
     local FS_ARGS="-nf -nonat"
@@ -28,6 +44,9 @@ start_freeswitch() {
     fi
     
     echo "Starting FreeSWITCH with: $FS_ARGS"
+
+    # Apply runtime configuration
+    configure_xml_curl
     
     if [ "$(id -u)" = "0" ]; then
         # Running as root - switch to freeswitch user

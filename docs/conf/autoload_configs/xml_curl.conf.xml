@@ -1,0 +1,7 @@
+<configuration name="xml_curl.conf" description="cURL XML Gateway">
+  <bindings>
+    <binding name="backend">
+      <param name="gateway-url" value="http://localhost:3000/freeswitch/xml" bindings="configuration|directory|dialplan"/>
+    </binding>
+  </bindings>
+</configuration>
