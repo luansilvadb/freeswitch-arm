@@ -56,7 +56,7 @@ formats/mod_shout
 formats/mod_local_stream
 
 # Languages
-# languages/mod_lua
+languages/mod_lua
 # languages/mod_python3
 # languages/mod_v8
 
