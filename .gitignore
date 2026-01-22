@@ -1,0 +1,10 @@
+
+# Docker
+.dockerignore
+*.log
+*.tar.gz
+fs-conf/
+
+# Artifacts
+.specify/
+specs/
