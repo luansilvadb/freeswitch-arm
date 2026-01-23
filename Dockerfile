@@ -138,6 +138,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     procps \
     iproute2 \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy built artifacts from build stage
