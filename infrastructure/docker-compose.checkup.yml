@@ -1,0 +1,98 @@
+# FreeSWITCH-ARM Production Readiness Checkup
+# Docker Compose for Local Testing Environment
+# 
+# Usage:
+#   docker compose -f infrastructure/docker-compose.checkup.yml up -d
+#   ./scripts/checkup/run-all.sh --backend-url http://localhost:3000
+#   docker compose -f infrastructure/docker-compose.checkup.yml down -v
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # FreeSWITCH Container (System Under Test)
+  # ==========================================================================
+  freeswitch:
+    image: ${FREESWITCH_IMAGE:-freeswitch-arm:latest}
+    container_name: freeswitch-checkup
+    hostname: freeswitch-checkup
+    environment:
+      - XML_CURL_URL=http://backend:3000/freeswitch/xml
+    ports:
+      - "5060:5060/tcp"
+      - "5060:5060/udp"
+      - "5080:5080/tcp"
+      - "5080:5080/udp"
+      - "8021:8021/tcp"
+    volumes:
+      - freeswitch-conf:/usr/local/freeswitch/conf
+      - freeswitch-log:/usr/local/freeswitch/log
+      - freeswitch-db:/usr/local/freeswitch/db
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+      core: -1
+    networks:
+      - checkup-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "freeswitch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ==========================================================================
+  # Mock Backend (for standalone testing without real backend)
+  # Uses a simple nginx to return mock XML responses
+  # ==========================================================================
+  backend:
+    image: nginx:alpine
+    container_name: backend-checkup
+    hostname: backend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./mock-backend:/usr/share/nginx/html:ro
+      - ./mock-backend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - checkup-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # ==========================================================================
+  # PostgreSQL (if backend requires database)
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-checkup
+    environment:
+      POSTGRES_DB: pbx_backend
+      POSTGRES_USER: pbx_user
+      POSTGRES_PASSWORD: pbx_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - checkup-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pbx_user -d pbx_backend"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  checkup-network:
+    driver: bridge
+
+volumes:
+  freeswitch-conf:
+  freeswitch-log:
+  freeswitch-db:
+  postgres-data:
