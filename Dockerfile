@@ -33,6 +33,18 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libpq-dev \
     libtiff-dev \
+    libyuv-dev \
+    libpng-dev \
+    libshout3-dev \
+    libmpg123-dev \
+    libmp3lame-dev \
+    libldap-dev \
+    libopencore-amrnb-dev \
+    libopencore-amrwb-dev \
+    libavformat-dev \
+    libavcodec-dev \
+    libswscale-dev \
+    libavutil-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -43,27 +55,47 @@ RUN git clone https://github.com/signalwire/libks.git \
     && cd libks \
     && cmake . -DCMAKE_INSTALL_PREFIX=/usr -DWITH_LIBBACKTRACE=OFF \
     && make -j$(nproc) \
+    && make install
 
 # Build signalwire-c
 RUN git clone https://github.com/signalwire/signalwire-c.git \
     && cd signalwire-c \
     && cmake . -DCMAKE_INSTALL_PREFIX=/usr \
     && make -j$(nproc) \
+    && make install
 
+
+# Build spandsp
+RUN git clone https://github.com/freeswitch/spandsp.git \
+    && cd spandsp \
+    && ./bootstrap.sh \
+    && ./configure --prefix=/usr \
+    && make -j$(nproc) \
+    && make install
+    
+
+
+# Build sofia-sip
+
+RUN git clone https://github.com/freeswitch/sofia-sip.git \
+    && cd sofia-sip \
+    && ./bootstrap.sh \
+    && ./configure --prefix=/usr \
+    && make -j$(nproc) \
+    && make install
+    
 # Build FreeSWITCH
-# Using a specific tag/commit can be safer, but master is requested for "wrapper of freeswitch-arm repo" 
-# (assuming latest source). You might want to pin a version if stability is key.
 RUN git clone https://github.com/signalwire/freeswitch.git \
     && cd freeswitch \
     && ./bootstrap.sh -j
 
+COPY modules.conf.in /usr/src/freeswitch/modules.conf
 
 # Configure and Build
-# Disable zrtp to avoid dependency complexity if not needed, or ensure libzrtp is present.
-# We stick to standard build.
 RUN cd freeswitch \
     && ./configure --prefix=/usr/local/freeswitch \
     && make -j$(nproc) \
+    && make install
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
@@ -93,21 +125,47 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zlib1g \
     libpq5 \
     libtiff6 \
+    libyuv0 \
+    libavformat59 \
+    libavcodec59 \
+    libswscale6 \
+    libavutil57 \
+    libopencore-amrnb0 \
+    libopencore-amrwb0 \
+    libshout3 \
+    libpng16-16 \
+    libldap-2.5-0 \
     ca-certificates \
+    procps \
+    iproute2 \
+    nano \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy built artifacts from build stage
 COPY --from=build /usr/local/freeswitch /usr/local/freeswitch
 COPY --from=build /usr/lib/*signalwire* /usr/lib/
 COPY --from=build /usr/lib/*libks* /usr/lib/
+COPY --from=build /usr/lib/*spandsp* /usr/lib/
+COPY --from=build /usr/lib/*sofia* /usr/lib/
+
+
+
 # Also check /usr/local/lib for signalwire/ks if cmake installed there
-COPY --from=build /usr/local/lib/*signalwire* /usr/local/lib/ || true
-COPY --from=build /usr/local/lib/*libks* /usr/local/lib/ || true
-COPY --from=build /usr/include/*signalwire* /usr/include/ || true
-COPY --from=build /usr/include/*libks* /usr/include/ || true
+COPY --from=build /usr/local/lib/*signalwire* /usr/local/lib/
+COPY --from=build /usr/local/lib/*libks* /usr/local/lib/
+COPY --from=build /usr/include/*signalwire* /usr/include/
+COPY --from=build /usr/include/*libks* /usr/include/
+COPY --from=build /usr/include/*spandsp* /usr/include/
+COPY --from=build /usr/include/*sofia-sip* /usr/include/
+
+
 
 # Refresh ld cache
 RUN ldconfig
+
+# Copy custom configuration from repository
+# This overwrites the default configuration installed by the build process
+COPY docs/conf /usr/local/freeswitch/conf
 
 # Create user/group (optional, but good practice. Spec didn't strictly mandate rootless, but implicit in US2 config)
 RUN groupadd -r freeswitch && useradd -r -g freeswitch freeswitch
@@ -137,9 +195,10 @@ EXPOSE 16384-32768/udp
 # Volumes
 VOLUME ["/usr/local/freeswitch/conf", "/usr/local/freeswitch/log", "/usr/local/freeswitch/run", "/usr/local/freeswitch/db"]
 
-# Healthcheck
-HEALTHCHECK --interval=15s --timeout=5s \
-    CMD /usr/local/freeswitch/bin/fs_cli -x status | grep -q ^UP || exit 1
+# Healthcheck - verify FreeSWITCH process is running and SIP port is listening
+# Using process + port check is more reliable for Swarm/Easypanel environments than fs_cli
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+    CMD pgrep -x freeswitch > /dev/null && ss -tuln | grep -q ":5060 " || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["freeswitch"]
